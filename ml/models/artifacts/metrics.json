@@ -1,0 +1,153 @@
+{
+  "model_version": "v1.2.0-xgb",
+  "evaluation_split": "Time-aware held-out test set (chronological 20%)",
+  "dataset": {
+    "total_transactions": 6500,
+    "train_transactions": 5200,
+    "test_transactions": 1300,
+    "test_fraud_count": 59,
+    "test_fraud_rate": 0.0454
+  },
+  "baseline_logistic_regression": {
+    "threshold": 0.5,
+    "precision": 0.3622,
+    "recall": 0.7797,
+    "f1": 0.4946,
+    "pr_auc": 0.6543,
+    "roc_auc": 0.8902,
+    "fpr": 0.0653,
+    "fnr": 0.2203,
+    "confusion_matrix": {
+      "tn": 1160,
+      "fp": 81,
+      "fn": 13,
+      "tp": 46
+    },
+    "business_cost": {
+      "fp_cost_unit": 250.0,
+      "fn_cost_unit": 3500.0,
+      "total_cost": 65750.0,
+      "cost_per_tx": 50.58
+    }
+  },
+  "primary_xgboost": {
+    "default_threshold_0_5": {
+      "threshold": 0.5,
+      "precision": 0.8772,
+      "recall": 0.8475,
+      "f1": 0.8621,
+      "pr_auc": 0.8648,
+      "roc_auc": 0.9064,
+      "fpr": 0.0056,
+      "fnr": 0.1525,
+      "confusion_matrix": {
+        "tn": 1234,
+        "fp": 7,
+        "fn": 9,
+        "tp": 50
+      },
+      "business_cost": {
+        "fp_cost_unit": 250.0,
+        "fn_cost_unit": 3500.0,
+        "total_cost": 33250.0,
+        "cost_per_tx": 25.58
+      }
+    },
+    "cost_optimal_threshold": {
+      "threshold": 0.82,
+      "precision": 0.9804,
+      "recall": 0.8475,
+      "f1": 0.9091,
+      "pr_auc": 0.8648,
+      "roc_auc": 0.9064,
+      "fpr": 0.0008,
+      "fnr": 0.1525,
+      "confusion_matrix": {
+        "tn": 1240,
+        "fp": 1,
+        "fn": 9,
+        "tp": 50
+      },
+      "business_cost": {
+        "fp_cost_unit": 250.0,
+        "fn_cost_unit": 3500.0,
+        "total_cost": 31750.0,
+        "cost_per_tx": 24.42
+      }
+    },
+    "feature_importance": [
+      {
+        "feature": "is_new_device",
+        "importance": 0.4019
+      },
+      {
+        "feature": "transactions_last_24h",
+        "importance": 0.098
+      },
+      {
+        "feature": "transactions_last_10m",
+        "importance": 0.0536
+      },
+      {
+        "feature": "amount_to_avg_ratio",
+        "importance": 0.0513
+      },
+      {
+        "feature": "transactions_last_1h",
+        "importance": 0.045
+      },
+      {
+        "feature": "amount_to_max_ratio",
+        "importance": 0.0431
+      },
+      {
+        "feature": "amount",
+        "importance": 0.0398
+      },
+      {
+        "feature": "is_credit_card",
+        "importance": 0.0376
+      },
+      {
+        "feature": "is_unusual_hour",
+        "importance": 0.0338
+      },
+      {
+        "feature": "is_new_country",
+        "importance": 0.0326
+      },
+      {
+        "feature": "is_net_banking",
+        "importance": 0.0326
+      },
+      {
+        "feature": "customer_age_days",
+        "importance": 0.0302
+      },
+      {
+        "feature": "hour_cos",
+        "importance": 0.028
+      },
+      {
+        "feature": "amount_deviation",
+        "importance": 0.023
+      },
+      {
+        "feature": "customer_transaction_count",
+        "importance": 0.0217
+      },
+      {
+        "feature": "hour_sin",
+        "importance": 0.0139
+      },
+      {
+        "feature": "is_upi",
+        "importance": 0.0139
+      }
+    ]
+  },
+  "business_cost_params": {
+    "fp_cost": 250.0,
+    "fn_cost": 3500.0
+  }
+}
