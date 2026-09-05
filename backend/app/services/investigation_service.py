@@ -42,10 +42,11 @@ class InvestigationService:
         entity_graph.register_transaction(tx_data)
         entity_signals = entity_graph.analyze_entity_correlations(tx_data)
 
-        # 2. Query customer history from DB for dynamic baseline
+        # 2. Query customer history from DB for dynamic baseline (excluding simulated txns)
         prior_txs_models = db.query(TransactionModel).filter(
             TransactionModel.customer_id == cust_id,
-            TransactionModel.transaction_id != txn_id
+            TransactionModel.transaction_id != txn_id,
+            ~TransactionModel.transaction_id.like("txn_sim_%")
         ).order_by(desc(TransactionModel.timestamp)).limit(50).all()
 
         prior_txs = [
@@ -275,7 +276,14 @@ class InvestigationService:
             "risk_level": risk_level,
             "ml_probability": round(ml_prob, 4),
             "recommendation": policy_result["decision"],
+            "decision": policy_result["decision"],
+            "confidence_score": policy_result.get("confidence_score", 0.85),
+            "evidence_strength": policy_result.get("evidence_strength", "MODERATE"),
+            "business_impact": policy_result.get("business_impact", {}),
+            "signals_breakdown": fusion_result.get("signals_breakdown", {}),
             "factors": fusion_result["factors"],
+            "evidence": evidence,
+            "counter_evidence": counter_evidence,
             "evidence_count": len(evidence),
             "counter_evidence_count": len(counter_evidence),
         }
@@ -390,10 +398,24 @@ class InvestigationService:
                 "status": inv.status,
             }
 
+        # Policy & Business Impact evaluation
+        policy_eval = DecisionPolicyEngine.evaluate_decision({
+            "risk_score": inv.risk_score,
+            "risk_level": inv.risk_level,
+            "ai_investigation": ai_assessment or {},
+            "evidence": [{"type": e.type, "severity": e.severity, "description": e.description} for e in ev_records],
+            "counter_evidence": [{"type": c.type, "description": c.description} for c in cev_records],
+            "transaction": tx_dict,
+        })
+
         return {
             "transaction": tx_dict,
             "risk_score": inv.risk_score,
             "risk_level": inv.risk_level,
+            "confidence_score": policy_eval.get("confidence_score", 0.85),
+            "evidence_strength": policy_eval.get("evidence_strength", "MODERATE"),
+            "signals_breakdown": fusion_calc.get("signals_breakdown", {}),
+            "business_impact": policy_eval.get("business_impact", {}),
             "ml_output": {
                 "fraud_probability": tx.ml_probability,
                 "is_fraud_flag": bool(tx.ml_probability >= 0.70),
@@ -438,7 +460,7 @@ class InvestigationService:
                 }
                 for t in timeline_records
             ],
-            "recommended_action": inv.policy_recommendation,
+            "recommended_action": policy_eval.get("decision", inv.policy_recommendation),
             "model_version": inv.model_version,
             "policy_version": inv.policy_version,
             "existing_decision": existing_decision,

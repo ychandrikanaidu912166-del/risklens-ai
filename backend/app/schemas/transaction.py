@@ -1,10 +1,11 @@
+import uuid
 from pydantic import BaseModel, Field
 from typing import Optional, List, Dict, Any
 from datetime import datetime
 
 
 class TransactionCreate(BaseModel):
-    transaction_id: str = Field(..., description="Unique transaction ID")
+    transaction_id: Optional[str] = Field(default=None, description="Unique transaction ID")
     customer_id: str = Field(..., description="Customer account ID")
     merchant_id: str = Field(..., description="Merchant ID")
     amount: float = Field(..., gt=0, description="Amount in transaction currency")

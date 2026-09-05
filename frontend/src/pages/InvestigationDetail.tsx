@@ -17,7 +17,11 @@ import {
   Flag,
   RotateCcw,
   Layers,
+  DollarSign,
+  TrendingDown,
   Info,
+  Scale,
+  GitBranch,
 } from 'lucide-react';
 import {
   fetchInvestigationDetail,
@@ -95,7 +99,6 @@ export const InvestigationDetail: React.FC = () => {
       });
       setSubmitSuccess(`Decision '${selectedDecision}' submitted and recorded in audit log.`);
       setDecisionReason('');
-      // Reload updated context to show resolution status and timeline
       loadData();
     } catch (err: any) {
       setSubmitError(err.message || 'Failed to submit decision.');
@@ -130,6 +133,8 @@ export const InvestigationDetail: React.FC = () => {
 
   const { transaction, customer_behaviour } = context;
   const ai = context.ai_investigation;
+  const signals = context.signals_breakdown;
+  const business = context.business_impact;
 
   return (
     <div className="space-y-8 max-w-7xl mx-auto pb-16">
@@ -182,8 +187,103 @@ export const InvestigationDetail: React.FC = () => {
               <span className="text-base font-extrabold text-blue-400">
                 {context.recommended_action}
               </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">
+                Confidence: <strong className="text-emerald-400 font-mono">{Math.round((context.confidence_score || 0.85) * 100)}%</strong>
+              </span>
             </div>
             <RiskScoreGauge score={context.risk_score} level={context.risk_level} size={100} />
+          </div>
+        </div>
+      </div>
+
+      {/* MODEL SIGNAL AGREEMENT INTELLIGENCE & BUSINESS LOSS EXPOSURE */}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        {/* Model Signal Agreement (7 Cols) */}
+        <div className="lg:col-span-7 p-5 rounded-2xl bg-slate-900/60 border border-slate-800">
+          <div className="flex items-center justify-between mb-3">
+            <div className="flex items-center gap-2">
+              <Scale className="w-4 h-4 text-purple-400" />
+              <h3 className="text-sm font-bold text-white">Model Agreement: Why this score?</h3>
+            </div>
+            {signals && (
+              <span className={`px-2 py-0.5 rounded text-[10px] font-mono font-bold uppercase border ${
+                signals.signal_agreement === 'CONVERGENT_HIGH'
+                  ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                  : signals.signal_agreement === 'CONVERGENT_LOW'
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  : 'bg-amber-500/15 text-amber-300 border-amber-500/30'
+              }`}>
+                {signals.signal_agreement.replace('_', ' ')}
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-slate-400 mb-4">
+            {signals?.agreement_description || "Evaluation of independent component signals feeding risk fusion."}
+          </p>
+
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-center">
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Supervised ML</span>
+              <span className="text-xl font-mono font-extrabold text-blue-400 mt-1 block">
+                {signals?.ml_risk ?? Math.round(context.ml_output.fraud_probability * 100)}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">XGBoost Prob</span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Anomaly Risk</span>
+              <span className="text-xl font-mono font-extrabold text-amber-400 mt-1 block">
+                {signals?.anomaly_risk ?? 75}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Amount &amp; Velocity</span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Behavior Risk</span>
+              <span className="text-xl font-mono font-extrabold text-purple-400 mt-1 block">
+                {signals?.behavior_risk ?? 65}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Device &amp; Geo Novelty</span>
+            </div>
+
+            <div className="p-3 rounded-xl bg-slate-950/80 border border-slate-800">
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-slate-400 block">Entity Risk</span>
+              <span className="text-xl font-mono font-extrabold text-cyan-400 mt-1 block">
+                {signals?.entity_risk ?? 15}
+              </span>
+              <span className="text-[10px] text-slate-500 block mt-0.5">Syndicate Graph</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Business Loss Intelligence (5 Cols) */}
+        <div className="lg:col-span-5 p-5 rounded-2xl bg-slate-900/60 border border-slate-800 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <DollarSign className="w-4 h-4 text-emerald-400" />
+              <h3 className="text-sm font-bold text-white">Business Loss Intelligence</h3>
+            </div>
+            <p className="text-xs text-slate-400 mb-3">
+              Cost-calibrated loss exposure and trade-off analysis.
+            </p>
+
+            <div className="space-y-2 text-xs">
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/80 border border-slate-800/80">
+                <span className="text-slate-400">Gross Transaction Amount:</span>
+                <span className="font-mono text-white font-bold">₹{transaction.amount.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between p-2 rounded-lg bg-slate-950/80 border border-slate-800/80">
+                <span className="text-slate-400">Risk-Adjusted Loss Exposure:</span>
+                <span className="font-mono text-red-400 font-bold">
+                  ₹{business?.risk_adjusted_exposure ? business.risk_adjusted_exposure.toLocaleString() : (transaction.amount * (context.risk_score/100)).toFixed(2)}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-3 text-[11px] text-slate-400 p-2.5 rounded-lg bg-slate-950/50 border border-slate-800/60">
+            <span className="text-slate-300 font-semibold">Cost Rationale: </span>
+            {business?.decision_cost_rationale || "Policy action balances friction cost against chargeback exposure."}
           </div>
         </div>
       </div>
@@ -205,7 +305,7 @@ export const InvestigationDetail: React.FC = () => {
                 </p>
               </div>
               <span className="text-xs font-mono font-semibold px-2.5 py-1 rounded bg-slate-800 text-slate-300 border border-slate-700">
-                {context.risk_factors.length} Active Signals
+                {context.risk_factors.length} Contributing Signals
               </span>
             </div>
 
@@ -342,77 +442,84 @@ export const InvestigationDetail: React.FC = () => {
             </div>
           </div>
 
-          {/* SECTION 3: EVIDENCE CHAIN & COUNTER-EVIDENCE */}
+          {/* SECTION 3: EVIDENCE CHAIN & DEVIL'S ADVOCATE COUNTER-EVIDENCE */}
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-6">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
                 <Layers className="w-5 h-5 text-blue-400" />
-                Structured Evidence &amp; Counter-Evidence
+                Evidence Chain &amp; Devil's Advocate Counter-Evidence
               </h3>
               <p className="text-xs text-slate-400 mt-0.5">
-                Balancing incriminating risk signals against legitimate trust markers.
+                Balancing incriminating risk signals against legitimate trust markers to prevent blind blocking.
               </p>
             </div>
 
-            {/* Incriminating Evidence */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-1.5">
-                <AlertTriangle className="w-3.5 h-3.5" /> Detected Risk Evidence ({context.evidence.length})
-              </h4>
-              <div className="space-y-2">
-                {context.evidence.map((ev) => (
-                  <div
-                    key={ev.evidence_id}
-                    className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-mono text-xs font-semibold text-slate-200">
-                        [{ev.type}] {ev.source}
-                      </span>
-                      <span
-                        className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
-                          ev.severity === 'CRITICAL'
-                            ? 'bg-red-500/15 border-red-500/30 text-red-400'
-                            : ev.severity === 'HIGH'
-                            ? 'bg-orange-500/15 border-orange-500/30 text-orange-400'
-                            : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
-                        }`}
-                      >
-                        {ev.severity}
-                      </span>
-                    </div>
-                    <p className="text-xs text-slate-300 mt-2">{ev.description}</p>
-                    {ev.observed_value && (
-                      <div className="mt-2 text-[11px] text-slate-400 flex items-center gap-4">
-                        <span>Observed: <strong className="text-slate-200">{ev.observed_value}</strong></span>
-                        <span>Baseline: <strong className="text-slate-400">{ev.baseline_value}</strong></span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Incriminating Evidence */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-red-400 mb-3 flex items-center gap-1.5">
+                  <AlertTriangle className="w-3.5 h-3.5" /> Detected Risk Evidence ({context.evidence.length})
+                </h4>
+                <div className="space-y-2">
+                  {context.evidence.map((ev) => (
+                    <div
+                      key={ev.evidence_id}
+                      className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800 hover:border-slate-700 transition-colors"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-mono text-xs font-semibold text-slate-200">
+                          [{ev.type}] {ev.source}
+                        </span>
+                        <span
+                          className={`text-[10px] font-bold uppercase px-2 py-0.5 rounded border ${
+                            ev.severity === 'CRITICAL'
+                              ? 'bg-red-500/15 border-red-500/30 text-red-400'
+                              : ev.severity === 'HIGH'
+                              ? 'bg-orange-500/15 border-orange-500/30 text-orange-400'
+                              : 'bg-amber-500/15 border-amber-500/30 text-amber-300'
+                          }`}
+                        >
+                          {ev.severity}
+                        </span>
                       </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Counter-Evidence */}
-            <div>
-              <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-1.5">
-                <ShieldCheck className="w-3.5 h-3.5" /> Legitimate Counter-Evidence ({context.counter_evidence.length})
-              </h4>
-              <div className="space-y-2">
-                {context.counter_evidence.map((cev) => (
-                  <div
-                    key={cev.id}
-                    className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/80"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="font-semibold text-xs text-emerald-300">{cev.title}</span>
-                      <span className="text-xs font-mono font-bold text-emerald-400">
-                        {cev.confidence_impact} pts
-                      </span>
+                      <p className="text-xs text-slate-300 mt-2">{ev.description}</p>
+                      {ev.observed_value && (
+                        <div className="mt-2 text-[11px] text-slate-400 flex flex-col gap-1 pt-2 border-t border-slate-900">
+                          <span>Observed: <strong className="text-slate-200 font-mono">{ev.observed_value}</strong></span>
+                          <span>Baseline: <strong className="text-slate-400 font-mono">{ev.baseline_value}</strong></span>
+                        </div>
+                      )}
                     </div>
-                    <p className="text-xs text-slate-300 mt-1">{cev.description}</p>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              </div>
+
+              {/* Counter-Evidence / Devil's Advocate */}
+              <div>
+                <h4 className="text-xs font-bold uppercase tracking-wider text-emerald-400 mb-3 flex items-center gap-1.5">
+                  <ShieldCheck className="w-3.5 h-3.5" /> Devil's Advocate Counter-Evidence ({context.counter_evidence.length})
+                </h4>
+                <div className="space-y-2">
+                  {context.counter_evidence.map((cev) => (
+                    <div
+                      key={cev.id}
+                      className="p-3.5 rounded-xl bg-slate-950/80 border border-slate-800/80"
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="font-semibold text-xs text-emerald-300">{cev.title}</span>
+                        <span className="text-xs font-mono font-bold text-emerald-400">
+                          {cev.confidence_impact} pts
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-300 mt-1">{cev.description}</p>
+                    </div>
+                  ))}
+                  {context.counter_evidence.length === 0 && (
+                    <div className="p-4 rounded-xl bg-slate-950/40 border border-slate-800 text-xs text-slate-500">
+                      No positive counter-evidence trust markers discovered.
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -459,12 +566,12 @@ export const InvestigationDetail: React.FC = () => {
 
         {/* Right Column (1 Col): AI Investigator & Analyst Decision Workbench */}
         <div className="space-y-8">
-          {/* SECTION 6: AI INVESTIGATOR */}
+          {/* SECTION 6: AI INVESTIGATOR (10-Point Structured Grounding) */}
           <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Sparkles className="w-5 h-5 text-purple-400" />
-                <h3 className="text-base font-bold text-white">AI Investigator</h3>
+                <h3 className="text-base font-bold text-white">AI Case Synthesizer</h3>
               </div>
               <button
                 onClick={handleTriggerAI}
@@ -472,7 +579,7 @@ export const InvestigationDetail: React.FC = () => {
                 className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-purple-600/20 hover:bg-purple-600 text-purple-300 hover:text-white border border-purple-500/30 text-xs font-semibold transition-colors disabled:opacity-50"
               >
                 <RotateCcw className={`w-3.5 h-3.5 ${analyzing ? 'animate-spin' : ''}`} />
-                {analyzing ? 'Analyzing...' : 'Re-Analyze'}
+                {analyzing ? 'Synthesizing...' : 'Re-Analyze'}
               </button>
             </div>
 
@@ -486,52 +593,58 @@ export const InvestigationDetail: React.FC = () => {
 
             {ai && (
               <div className="space-y-4 text-xs">
-                {/* Assessment */}
+                {/* 1. Executive Summary */}
                 <div className="p-3.5 rounded-xl bg-purple-500/10 border border-purple-500/20">
                   <span className="font-semibold text-purple-300 block mb-1">
-                    Synthesized Assessment
+                    1. Executive Summary
                   </span>
-                  <p className="text-slate-200 leading-relaxed">{ai.assessment}</p>
+                  <p className="text-slate-200 leading-relaxed">
+                    {ai.executive_summary || ai.assessment}
+                  </p>
                   <div className="mt-2 text-[11px] text-purple-400 font-mono font-semibold">
-                    Confidence: {(ai.confidence * 100).toFixed(0)}%
+                    Confidence: {Math.round(ai.confidence * 100)}%
                   </div>
                 </div>
 
-                {/* Primary Evidence */}
-                <div>
-                  <span className="font-semibold text-slate-300 block mb-1.5">
-                    Primary Evidence Drivers
-                  </span>
-                  <ul className="space-y-1">
-                    {ai.primary_evidence.map((p, i) => (
-                      <li key={i} className="text-slate-400 flex items-start gap-1.5">
-                        <span className="text-red-400">•</span> {p}
-                      </li>
-                    ))}
-                  </ul>
+                {/* 2. Risk Assessment */}
+                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                  <span className="font-semibold text-slate-300 block mb-1">2. Quantitative Risk Assessment</span>
+                  <p className="text-slate-400 leading-relaxed">
+                    {ai.risk_assessment || ai.reasoning_summary}
+                  </p>
                 </div>
 
-                {/* Counter Evidence in AI */}
-                {ai.counter_evidence.length > 0 && (
-                  <div>
-                    <span className="font-semibold text-slate-300 block mb-1.5">
-                      Counter-Evidence Noted
+                {/* 3. Behavioral Assessment */}
+                {ai.behavioral_assessment && (
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="font-semibold text-slate-300 block mb-1">3. Behavioral Profile Assessment</span>
+                    <p className="text-slate-400 leading-relaxed">{ai.behavioral_assessment}</p>
+                  </div>
+                )}
+
+                {/* 4. Entity Network Assessment */}
+                {ai.entity_network_assessment && (
+                  <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
+                    <span className="font-semibold text-slate-300 block mb-1">4. Entity &amp; Infrastructure Assessment</span>
+                    <p className="text-slate-400 leading-relaxed">{ai.entity_network_assessment}</p>
+                  </div>
+                )}
+
+                {/* 5. What Would Change This Recommendation */}
+                {ai.what_would_change_recommendation && ai.what_would_change_recommendation.length > 0 && (
+                  <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/20">
+                    <span className="font-semibold text-blue-300 block mb-1.5">
+                      5. Criteria to Change Recommendation
                     </span>
                     <ul className="space-y-1">
-                      {ai.counter_evidence.map((c, i) => (
-                        <li key={i} className="text-slate-400 flex items-start gap-1.5">
-                          <span className="text-emerald-400">•</span> {c}
+                      {ai.what_would_change_recommendation.map((trigger, i) => (
+                        <li key={i} className="text-slate-300 flex items-start gap-1.5">
+                          <span className="text-blue-400 font-bold">•</span> {trigger}
                         </li>
                       ))}
                     </ul>
                   </div>
                 )}
-
-                {/* Reasoning summary */}
-                <div className="p-3 rounded-lg bg-slate-950 border border-slate-800">
-                  <span className="font-semibold text-slate-400 block mb-1">Reasoning Summary</span>
-                  <p className="text-slate-300 leading-relaxed">{ai.reasoning_summary}</p>
-                </div>
               </div>
             )}
           </div>

@@ -11,6 +11,7 @@ import {
   Activity,
   Layers,
   Sparkles,
+  Zap,
 } from 'lucide-react';
 import { ResponsiveContainer, BarChart, Bar, XAxis, YAxis, Tooltip, Cell } from 'recharts';
 import { fetchOverviewMetrics } from '../api/client';
@@ -70,6 +71,12 @@ export const Overview: React.FC = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => navigate('/simulation')}
+            className="flex items-center gap-2 px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium text-sm transition-colors"
+          >
+            <Zap className="w-4 h-4 text-amber-400" /> Live Risk Simulator
+          </button>
           <button
             onClick={() => navigate('/investigations')}
             className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-500 text-white font-medium text-sm transition-colors shadow-sm shadow-blue-500/20"

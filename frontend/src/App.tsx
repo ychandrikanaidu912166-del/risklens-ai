@@ -5,6 +5,7 @@ import { Overview } from './pages/Overview';
 import { InvestigationQueue } from './pages/InvestigationQueue';
 import { InvestigationDetail } from './pages/InvestigationDetail';
 import { ModelMonitoring } from './pages/ModelMonitoring';
+import { Simulation } from './pages/Simulation';
 
 export const App: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ export const App: React.FC = () => {
           <Route index element={<Overview />} />
           <Route path="investigations" element={<InvestigationQueue />} />
           <Route path="investigations/:id" element={<InvestigationDetail />} />
+          <Route path="simulation" element={<Simulation />} />
           <Route path="model-monitoring" element={<ModelMonitoring />} />
           <Route path="*" element={<Navigate to="/" replace />} />
         </Route>

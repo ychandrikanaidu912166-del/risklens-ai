@@ -31,8 +31,31 @@ def extract_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     df = df.copy()
 
-    # Ensure timestamp is datetime
-    if not np.issubdtype(df["timestamp"].dtype, np.datetime64):
+    # Fill default values for required columns if missing
+    defaults = {
+        "amount": 0.0,
+        "customer_avg_amount": 1000.0,
+        "customer_max_amount": 1000.0,
+        "payment_method": "credit_card",
+        "transactions_last_10m": 0,
+        "transactions_last_1h": 0,
+        "transactions_last_24h": 0,
+        "customer_transaction_count": 1,
+        "customer_age_days": 30,
+        "is_new_device": 0,
+        "is_new_country": 0,
+        "is_unusual_hour": 0,
+    }
+    for col, def_val in defaults.items():
+        if col not in df.columns:
+            df[col] = def_val
+        else:
+            df[col] = df[col].fillna(def_val)
+
+    # Ensure timestamp is present and datetime
+    if "timestamp" not in df.columns or df["timestamp"].isna().all():
+        df["timestamp"] = pd.Timestamp.now()
+    elif not np.issubdtype(df["timestamp"].dtype, np.datetime64):
         df["timestamp"] = pd.to_datetime(df["timestamp"])
 
     # Temporal cyclic features

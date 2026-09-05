@@ -9,6 +9,7 @@ import {
   CheckCircle2,
   ExternalLink,
   ShieldCheck,
+  Zap,
 } from 'lucide-react';
 
 export const DashboardLayout: React.FC = () => {
@@ -62,6 +63,20 @@ export const DashboardLayout: React.FC = () => {
             >
               <Inbox className="w-4 h-4" />
               Investigation Queue
+            </NavLink>
+
+            <NavLink
+              to="/simulation"
+              className={({ isActive }) =>
+                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                  isActive
+                    ? 'bg-blue-600 text-white shadow-sm shadow-blue-500/20'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                }`
+              }
+            >
+              <Zap className="w-4 h-4 text-amber-400" />
+              Risk Simulator
             </NavLink>
 
             <NavLink

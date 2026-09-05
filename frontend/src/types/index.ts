@@ -70,15 +70,44 @@ export interface CounterEvidenceItem {
   timestamp?: string;
 }
 
+export interface SignalsBreakdown {
+  ml_risk: number;
+  anomaly_risk: number;
+  behavior_risk: number;
+  entity_risk: number;
+  final_fused_risk: number;
+  evidence_strength: string;
+  signal_agreement: string;
+  agreement_description: string;
+}
+
+export interface BusinessImpact {
+  transaction_amount: number;
+  potential_loss_exposure: number;
+  risk_adjusted_exposure: number;
+  false_positive_friction_cost: number;
+  decision_cost_rationale: string;
+}
+
 export interface AIAssessment {
+  // 10-point structured assessment
+  executive_summary?: string;
+  risk_assessment?: string;
+  strongest_evidence?: string[];
+  counter_evidence: string[];
+  behavioral_assessment?: string;
+  entity_network_assessment?: string;
+  business_impact?: any;
+  confidence: number;
+  recommended_action: string;
+  what_would_change_recommendation?: string[];
+
+  // Backward-compatible fields
   assessment: string;
   risk_level: string;
-  confidence: number;
   primary_evidence: string[];
   supporting_evidence: string[];
-  counter_evidence: string[];
   uncertainties: string[];
-  recommended_action: string;
   reasoning_summary: string;
   is_deterministic_fallback: boolean;
   provider: string;
@@ -153,6 +182,10 @@ export interface InvestigationContext {
   transaction: Transaction;
   risk_score: number;
   risk_level: 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+  confidence_score?: number;
+  evidence_strength?: string;
+  signals_breakdown?: SignalsBreakdown;
+  business_impact?: BusinessImpact;
   ml_output: {
     fraud_probability: number;
     is_fraud_flag: boolean;
@@ -203,4 +236,27 @@ export interface OverviewMetrics {
     status: string;
     timestamp: string;
   }>;
+}
+
+export interface SimulationPreset {
+  id: string;
+  name: string;
+  category: string;
+  description: string;
+  payload: Partial<Transaction>;
+}
+
+export interface PipelineStep {
+  step: number;
+  title: string;
+  status: string;
+  detail: string;
+}
+
+export interface SimulationResult {
+  status: string;
+  transaction_id: string;
+  pipeline_trace: PipelineStep[];
+  result: any;
+  context: InvestigationContext;
 }

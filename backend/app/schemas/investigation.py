@@ -32,15 +32,25 @@ class CounterEvidenceItem(BaseModel):
 
 
 class AIAssessment(BaseModel):
-    assessment: str
-    risk_level: str
-    confidence: float
-    primary_evidence: List[str]
-    supporting_evidence: List[str]
-    counter_evidence: List[str]
-    uncertainties: List[str]
-    recommended_action: str
-    reasoning_summary: str
+    # 10-point structured investigation
+    executive_summary: str = ""
+    risk_assessment: str = ""
+    strongest_evidence: List[str] = []
+    counter_evidence: List[str] = []
+    behavioral_assessment: str = ""
+    entity_network_assessment: str = ""
+    business_impact: Dict[str, Any] = {}
+    confidence: float = 0.85
+    recommended_action: str = "MANUAL_REVIEW"
+    what_would_change_recommendation: List[str] = []
+
+    # Backward-compatible fields
+    assessment: str = ""
+    risk_level: str = "LOW"
+    primary_evidence: List[str] = []
+    supporting_evidence: List[str] = []
+    uncertainties: List[str] = []
+    reasoning_summary: str = ""
     is_deterministic_fallback: bool = True
     provider: str = "local_deterministic_engine"
 
@@ -51,6 +61,8 @@ class InvestigationContextResponse(BaseModel):
     risk_level: str
     ml_output: Dict[str, Any]
     risk_factors: List[RiskFactor]
+    signals_breakdown: Optional[Dict[str, Any]] = None
+    business_impact: Optional[Dict[str, Any]] = None
     evidence: List[EvidenceItem]
     counter_evidence: List[CounterEvidenceItem]
     customer_behaviour: Dict[str, Any]

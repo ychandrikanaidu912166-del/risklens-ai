@@ -2,7 +2,9 @@ import {
   OverviewMetrics,
   InvestigationListItem,
   InvestigationContext,
-  AIAssessment
+  AIAssessment,
+  SimulationPreset,
+  SimulationResult,
 } from '../types';
 
 const API_BASE = '/api/v1';
@@ -67,5 +69,25 @@ export async function submitAnalystDecision(
 export async function fetchModelMetrics(): Promise<any> {
   const res = await fetch(`${API_BASE}/metrics/model`);
   if (!res.ok) throw new Error(`Failed to fetch model metrics: ${res.statusText}`);
+  return res.json();
+}
+
+export async function fetchSimulationPresets(): Promise<SimulationPreset[]> {
+  const res = await fetch(`${API_BASE}/transactions/simulation/presets`);
+  if (!res.ok) throw new Error(`Failed to load presets: ${res.statusText}`);
+  const data = await res.json();
+  return data.presets || [];
+}
+
+export async function simulateTransaction(payload: any): Promise<SimulationResult> {
+  const res = await fetch(`${API_BASE}/transactions/simulate`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ detail: res.statusText }));
+    throw new Error(err.detail || 'Failed to execute simulation');
+  }
   return res.json();
 }
