@@ -5,15 +5,19 @@
 RiskLens AI is a student project built for the Razorpay AI Risk Manager
 Buildathon. It focuses on **payment fraud / payment risk intelligence** —
 detecting suspicious transactions, explaining *why* they are suspicious with
-grounded evidence, and recommending an action for a human analyst.
+grounded evidence, presenting the case to a human analyst in a professional
+dashboard, and recording their decision to an audit trail.
 
 > The dataset is **synthetic**. Nothing in this project is affiliated with,
-> connected to, or uses proprietary data from Razorpay. All numbers reported
-> below come from the synthetic held-out test set.
+> connected to, or uses proprietary data from Razorpay. All numbers displayed
+> in the dashboard come from the synthetic held-out test set or the live
+> in-memory database.
 
 ---
 
-## What's in this stage (backend risk engine)
+## What's inside
+
+### Backend (Stage 1)
 
 - FastAPI backend with typed Pydantic schemas.
 - Reproducible synthetic payment dataset generator (~85k rows, ~6% fraud
@@ -31,14 +35,28 @@ grounded evidence, and recommending an action for a human analyst.
   MEDIUM / HIGH / CRITICAL bands.
 - Decision engine that considers score, confidence, amount and evidence
   strength — never score alone.
-- SQLite persistence for customers, merchants, devices, transactions,
-  investigations and an append-only audit trail.
-- Working REST endpoints for scoring, transaction listing, investigation
-  retrieval, health and model metrics.
-- Unit tests for fusion, decision, and feature leakage.
+- **Grounded deterministic AI investigator** — every claim it emits
+  references an evidence id produced by the risk engine.
+- SQLite persistence with append-only audit trail and analyst decisions.
 
-The frontend, entity graph visualization, analyst-override flow, AI
-investigator narrative and other advanced features come in later stages.
+### Frontend (Stage 2)
+
+- React + Vite + TypeScript + Tailwind CSS analyst dashboard.
+- Pages:
+  - **Overview** — real KPIs from `/overview`, risk distribution, model
+    health tiles from `/metrics/model`, recent investigations table.
+  - **Investigation Queue** (`/investigations`) — filterable/sortable table
+    of scored transactions from `/transactions`.
+  - **Investigation Detail** (`/investigations/:txId`) — risk dial, evidence
+    cards, counter-evidence, model SHAP waterfall, customer behaviour
+    comparison, timeline, entity graph, AI investigation report and
+    analyst decision panel.
+  - **Model Monitoring** (`/model-monitoring`) — held-out precision /
+    recall / F1 / PR-AUC / ROC-AUC / FPR / FNR / Brier / confusion matrix
+    / PR curve / business cost, plus baseline comparison.
+  - **Audit Trail** (`/audit`) — append-only event stream.
+- Centralised typed API client, React Query for data fetching, loading /
+  empty / error states everywhere.
 
 ---
 
@@ -47,73 +65,115 @@ investigator narrative and other advanced features come in later stages.
 ```
 backend/
   app/
-    main.py            FastAPI application, mounts routers
-    config.py          pydantic-settings — env-var driven
-    api/               health, transactions, investigations, metrics
-    db/                SQLAlchemy engine, ORM models, session helpers
+    main.py            FastAPI application; mounts all routers
+    api/               health, overview, transactions, investigations, ai,
+                       decisions, audit, entities, metrics
+    db/                SQLAlchemy engine, ORM models
     schemas/           Pydantic request/response models
     ml/                features, model wrapper, trainer, evaluator, SHAP
-    risk/              behavior, evidence, fusion, decision, engine
-    utils/             logging
+    risk/              behaviour, evidence, fusion, decision, engine
+    ai/                deterministic grounded investigator
+    utils/             logging, config
   data/generate.py     Synthetic dataset generator (seeded, reproducible)
-  scripts/             CLI wrappers: generate_data, train_model,
-                       evaluate_model, sample_transactions
-  artifacts/           Model / calibrator / metrics / DB (gitignored)
-  tests/               pytest suite
+  scripts/             generate_data, train_model, evaluate_model,
+                       sample_transactions, seed_demo
+  artifacts/           Model / calibrator / metrics / SQLite (gitignored)
+  tests/               pytest suite (13 tests)
+frontend/
+  package.json         Vite + React + TS + Tailwind + React Query + Recharts
+  src/
+    api/               Typed API client + type mirrors of backend schemas
+    components/
+      layout/          Sidebar, topbar, shell
+      common/          KpiTile, RiskBadge, ScoreDial, States, format helpers
+      investigation/   EvidenceList, ShapWaterfall, BehaviorPanel, Timeline,
+                       EntityGraph, AiInvestigation, DecisionPanel
+    pages/             Overview, Queue, Investigation, ModelMonitoring, Audit
 ```
 
 ---
 
-## Setup (Windows, macOS, Linux)
+## Setup and run (Windows, macOS, Linux)
 
-Prereqs: **Python 3.10+**.
+Prereqs: **Python 3.10+** and **Node 20+**.
+
+### 1. Backend
 
 ```powershell
-# 1. Clone and enter the project.
-git clone <your-fork-url> risklens-ai
-cd risklens-ai
-
-# 2. Create a virtual environment.
 python -m venv .venv
 .venv\Scripts\activate       # Windows
 # source .venv/bin/activate  # macOS / Linux
 
-# 3. Install dependencies.
 pip install -r backend/requirements.txt
-```
 
-Run the four commands in order:
+python -m backend.data.generate                   # (a) generate synthetic dataset
+python -m backend.app.ml.train                    # (b) train ML model, write metrics.json
+python -m backend.scripts.sample_transactions --seed-db   # (c) seed SQLite with history
+python -m backend.scripts.seed_demo --count 60    # (d) score a mix of live investigations
 
-```powershell
-# a) Generate the synthetic dataset (~85k rows, seeded).
-python -m backend.data.generate
-
-# b) Train the ML model, calibrate it, and write metrics.json.
-python -m backend.app.ml.train
-
-# c) Seed SQLite with historical transactions and emit sample payloads.
-python -m backend.scripts.sample_transactions --seed-db
-
-# d) Run the API.
 uvicorn backend.app.main:app --reload --host 127.0.0.1 --port 8000
 ```
 
 Then open http://127.0.0.1:8000/docs for the interactive Swagger UI.
 
+### 2. Frontend
+
+In a second terminal:
+
+```powershell
+cd frontend
+npm install
+npm run dev
+```
+
+Open http://127.0.0.1:5173. Vite proxies `/api/*` to `http://127.0.0.1:8000`,
+so the frontend talks to the real FastAPI backend.
+
+### 3. Tests
+
+```powershell
+python -m pytest backend/tests -q     # backend  (13 tests)
+cd frontend && npm run build          # frontend production build (TS + Vite)
+```
+
 ---
 
-## API surface (this stage)
+## API surface consumed by the frontend
 
 Base: `http://127.0.0.1:8000/api/v1`
 
-| Method | Path | Purpose |
+| Method | Path | Used by |
 |---|---|---|
-| GET | `/health` | Liveness + model version + feature count |
-| POST | `/transactions/score` | Score one transaction; returns full `InvestigationResult` |
-| GET  | `/transactions` | List scored live transactions (filter by risk_level / action) |
-| GET  | `/transactions/{tx_id}` | Raw transaction |
-| GET  | `/investigations/{tx_id}` | Full persisted investigation payload |
-| GET  | `/metrics/model` | Latest held-out metrics from `metrics.json` |
+| GET | `/health` | Topbar |
+| GET | `/overview` | Overview page |
+| GET | `/transactions` | Queue page |
+| POST | `/transactions/score` | Programmatic (samples, seed) |
+| GET | `/investigations/{tx_id}` | Investigation detail |
+| GET | `/investigations/{tx_id}/ai-report` | AI Investigation section |
+| GET | `/entities/{type}/{id}/subgraph` | Entity graph |
+| POST | `/decisions` | Analyst decision panel |
+| GET | `/decisions?tx_id=` | Decision history |
+| GET | `/audit` | Audit page |
+| GET | `/metrics/model` | Model Monitoring |
+
+Error contract: `{detail: string}` with 4xx for client errors, 5xx for
+server. The client centralises this in `frontend/src/api/client.ts`
+(`ApiError` class); no URLs live in components.
+
+---
+
+## Analyst decision flow
+
+The Investigation Detail page's decision panel offers five actions:
+**APPROVE**, **HOLD**, **BLOCK**, **FALSE POSITIVE**, **ESCALATE**.
+
+Submitting one:
+1. `POST /api/v1/decisions` with `{tx_id, action, reason, analyst_id}`.
+2. Persists to the `decisions` table.
+3. Writes an `ANALYST_DECISION` row to the append-only `audit_events`
+   table — visible on the Audit Trail page.
+4. **Does not** retrain the model. Feedback is stored as controlled
+   evaluation data only.
 
 ---
 
@@ -127,36 +187,50 @@ Reported straight from `backend/artifacts/metrics.json` after training. Do
 - Business-cost knobs (`fp_cost_per_tx=12`, `fn_cost_per_tx=250`) are
   illustrative and configurable via `.env`.
 
+The Model Monitoring page renders these numbers verbatim from the API —
+nothing in the UI is hardcoded.
+
 ---
 
 ## Design guarantees
 
-1. **No fabricated numbers.** Every metric comes from `sklearn.metrics`
-   computed on the held-out split. The evidence engine's `weight` values
-   are computed from feature values / rule outcomes / model probability.
+1. **No fabricated numbers.** Every metric comes from `sklearn.metrics` on
+   a held-out split. Every evidence weight is derived from a feature value,
+   rule outcome, or model contribution.
 2. **No leakage.** Velocity and behavioural-baseline features for a row at
-   time `T` use only rows with `ts < T` (unit-tested in
-   `backend/tests/test_features_leakage.py`).
-3. **ML predicts, the AI investigation layer will only summarize.** In
-   this stage no LLM is called; the risk score is fully deterministic and
-   reproducible with seed 42. When the AI investigator is added, it will
-   receive structured evidence and be forbidden from inventing new facts.
+   time `T` use only rows with `ts < T`
+   (unit-tested in `backend/tests/test_features_leakage.py`).
+3. **ML predicts, AI narrates.** The deterministic risk engine computes
+   the score. The AI investigation layer only summarises evidence the
+   engine already produced — it references evidence ids and does not
+   introduce facts.
 4. **Score alone doesn't decide.** The decision engine gates BLOCK/HOLD on
    confidence and evidence strength; insufficient evidence with a high
    score routes to `MANUAL_REVIEW`.
 5. **Reproducible.** `seed=42` end-to-end (data generator, ML training,
-   SHAP background).
+   SHAP background, demo seed).
 
 ---
 
-## What's coming next
+## Screenshots
 
-- AI investigator (Anthropic API, grounded by evidence-id verifier +
-  deterministic template fallback that ships without any API key).
-- Entity graph (customer ↔ device ↔ IP ↔ merchant) with `networkx`.
-- Analyst-override + decision recording API.
-- React + Tailwind analyst dashboard.
-- Model comparison and drift monitoring.
+_Placeholder — capture screenshots of the running dashboard and drop them here:_
+
+- `docs/screenshots/overview.png`
+- `docs/screenshots/queue.png`
+- `docs/screenshots/investigation.png`
+- `docs/screenshots/model-monitoring.png`
+- `docs/screenshots/audit.png`
+
+---
+
+## Roadmap
+
+- Anthropic-powered AI investigator (behind evidence-id verifier — falls
+  back to deterministic template when no API key is set).
+- Model drift monitoring (PSI per feature between training and live).
+- Docker Compose + Postgres adapter (SQLAlchemy already abstracts it).
+- Playwright end-to-end tests for the analyst workflow.
 
 ---
 
@@ -164,4 +238,5 @@ Reported straight from `backend/artifacts/metrics.json` after training. Do
 
 - No PII in the synthetic data. IPs are stored as SHA-256 truncated hashes.
 - Secrets loaded from environment variables. `.env.example` documents them.
-- Nothing offensive-security in scope. Defensive risk analytics only.
+- CORS restricted to configured origins in `RISKLENS_CORS_ORIGINS`.
+- No offensive-security functionality. Defensive risk analytics only.

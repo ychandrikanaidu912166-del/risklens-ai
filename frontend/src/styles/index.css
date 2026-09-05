@@ -1,0 +1,79 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark light;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  font-feature-settings: "cv02", "cv03", "cv04", "ss01";
+}
+
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Custom scrollbar for the dark theme */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+  background: rgb(58 71 87 / 0.5);
+  border-radius: 6px;
+}
+::-webkit-scrollbar-thumb:hover { background: rgb(90 107 125 / 0.6); }
+
+@layer components {
+  .card {
+    @apply rounded-lg border border-ink-700/70 bg-ink-900/70 shadow-card;
+  }
+  .card-header {
+    @apply px-4 py-3 border-b border-ink-700/60 flex items-center justify-between;
+  }
+  .card-title {
+    @apply text-sm font-semibold tracking-tight text-ink-100;
+  }
+  .card-subtitle {
+    @apply text-xs text-ink-400;
+  }
+  .badge {
+    @apply inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-xs font-medium ring-1 ring-inset;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-sm font-medium
+           ring-1 ring-inset transition-colors disabled:opacity-50 disabled:cursor-not-allowed;
+  }
+  .btn-primary {
+    @apply bg-brand-600 text-white ring-brand-500 hover:bg-brand-500;
+  }
+  .btn-ghost {
+    @apply bg-transparent text-ink-200 ring-ink-600 hover:bg-ink-800;
+  }
+  .btn-danger {
+    @apply bg-risk-critical/10 text-risk-critical ring-risk-critical/40 hover:bg-risk-critical/20;
+  }
+  .btn-warning {
+    @apply bg-risk-high/10 text-risk-high ring-risk-high/40 hover:bg-risk-high/20;
+  }
+  .btn-success {
+    @apply bg-risk-low/10 text-risk-low ring-risk-low/40 hover:bg-risk-low/20;
+  }
+  .input {
+    @apply w-full rounded-md border-0 bg-ink-800/70 px-3 py-1.5 text-sm text-ink-100
+           ring-1 ring-inset ring-ink-600 placeholder:text-ink-400
+           focus:outline-none focus:ring-2 focus:ring-brand-500;
+  }
+  .kpi-label {
+    @apply text-2xs uppercase tracking-wider text-ink-400;
+  }
+  .kpi-value {
+    @apply mt-1 text-2xl font-semibold tabular-nums text-ink-100;
+  }
+  .section-title {
+    @apply text-xs font-semibold uppercase tracking-wider text-ink-400;
+  }
+}
